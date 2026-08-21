@@ -1,0 +1,1924 @@
+<title>StagePatch</title>
+<style>
+/*
+ * Adapted from packages/web/src/styles.css so the demo looks like the product.
+ * Dark by default: this is read at a dim FOH position, where a white screen
+ * costs the operator their night vision.
+ */
+:root {
+  --bg: #14161a;
+  --surface: #1c1f25;
+  --surface-raised: #23272f;
+  --border: #313640;
+  --text: #e8eaed;
+  --text-dim: #9aa2ae;
+  --accent: #4a9eff;
+  --error: #ff6b6b;
+  --warning: #ffb454;
+  --ok: #4ade80;
+  color-scheme: dark;
+}
+/*
+ * Dark-first, so the light palette is defined twice: once for viewers whose OS
+ * says light and who have made no explicit choice (the default "system" state
+ * stamps nothing on the root, so only the media query separates them), and once
+ * for viewers who explicitly picked light. Without the media query a
+ * system-light viewer would silently get the dark palette.
+ */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f4f5f7;
+    --surface: #ffffff;
+    --surface-raised: #eceef1;
+    --border: #d4d8de;
+    --text: #16181d;
+    --text-dim: #5c6470;
+    --accent: #0b62d0;
+    --error: #c02626;
+    --warning: #9a5b00;
+    --ok: #1c7a3e;
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --surface-raised: #eceef1;
+  --border: #d4d8de;
+  --text: #16181d;
+  --text-dim: #5c6470;
+  --accent: #0b62d0;
+  --error: #c02626;
+  --warning: #9a5b00;
+  --ok: #1c7a3e;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  font-size: 15px;
+  direction: rtl;
+  overflow-x: hidden;
+}
+
+.app { max-width: 1400px; margin: 0 auto; padding: 1.25rem; }
+
+header.top {
+  display: flex; align-items: baseline; gap: 0.75rem; flex-wrap: wrap;
+  margin-bottom: 1rem; padding-bottom: 0.9rem; border-bottom: 1px solid var(--border);
+}
+header.top h1 { margin: 0; font-size: 1.35rem; letter-spacing: -0.01em; }
+header.top .sub { color: var(--text-dim); font-size: 0.88rem; }
+header.top .spacer { flex: 1; }
+
+.banner {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-inline-start: 3px solid var(--accent);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.87rem;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
+.banner strong { color: var(--text); }
+
+nav.steps { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+nav.steps button {
+  background: var(--surface); border: 1px solid var(--border); color: var(--text-dim);
+  padding: 0.45rem 0.95rem; border-radius: 6px; cursor: pointer; font: inherit; font-size: 0.88rem;
+}
+nav.steps button[aria-current="true"] {
+  background: var(--surface-raised); border-color: var(--accent); color: var(--text);
+}
+
+section.panel {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1.1rem; margin-bottom: 1rem;
+}
+section.panel > h2 { margin: 0 0 0.9rem; font-size: 1.05rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+section.panel h3 { margin: 1.1rem 0 0.5rem; font-size: 0.9rem; color: var(--text-dim); font-weight: 600; }
+
+label { display: block; font-size: 0.87rem; }
+label > span { display: block; margin-bottom: 0.2rem; color: var(--text-dim); font-size: 0.8rem; }
+
+input, select, textarea {
+  width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text);
+  padding: 0.4rem 0.55rem; border-radius: 5px; font: inherit; font-size: 0.88rem;
+}
+input[type="checkbox"] { width: auto; }
+input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+textarea { min-height: 130px; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.82rem; line-height: 1.5; }
+
+button.primary {
+  background: var(--accent); border: none; color: #08111d; font-weight: 600;
+  padding: 0.5rem 1.05rem; border-radius: 6px; cursor: pointer; font: inherit; font-weight: 600; font-size: 0.9rem;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) button.primary { color: #fff; }
+}
+:root[data-theme="light"] button.primary { color: #fff; }
+button.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+button.ghost {
+  background: transparent; border: 1px solid var(--border); color: var(--text);
+  padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font: inherit; font-size: 0.85rem;
+}
+button.ghost:hover { background: var(--surface-raised); }
+button.tiny { padding: 0.1rem 0.4rem; font-size: 0.8rem; line-height: 1.3; }
+
+.row { display: flex; gap: 0.7rem; align-items: flex-end; flex-wrap: wrap; margin-bottom: 0.6rem; }
+.row > label { flex: 1 1 130px; }
+.row > button { flex: 0 0 auto; }
+
+.grid-2 { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 1rem; align-items: start; }
+@media (max-width: 1000px) { .grid-2 { grid-template-columns: minmax(0, 1fr); } }
+
+/* The patch table is the screen that matters; it scrolls inside its own box so
+   the page body never scrolls sideways. */
+.table-scroll { overflow-x: auto; max-width: 100%; }
+table.patch { width: 100%; border-collapse: collapse; font-size: 0.85rem; white-space: nowrap; }
+table.patch th, table.patch td { border-bottom: 1px solid var(--border); padding: 0.3rem 0.45rem; text-align: start; }
+table.patch th { color: var(--text-dim); font-weight: 600; font-size: 0.76rem; position: sticky; top: 0; background: var(--surface); }
+table.patch tbody tr:hover { background: var(--surface-raised); }
+table.patch td.num { font-variant-numeric: tabular-nums; color: var(--text-dim); }
+table.patch input, table.patch select { padding: 0.15rem 0.3rem; font-size: 0.82rem; }
+table.patch td.name input { min-width: 120px; }
+/* Without a floor these collapse to a few characters and the chosen value is
+   unreadable — the whole point of showing the column. */
+table.patch select { min-width: 118px; }
+
+.chip { display: inline-block; padding: 0.05rem 0.4rem; border-radius: 4px; font-size: 0.73rem; border: 1px solid var(--border); color: var(--text-dim); }
+.chip.shared { border-color: var(--ok); color: var(--ok); }
+.chip.bad { border-color: var(--error); color: var(--error); }
+
+ul.notes { list-style: none; margin: 0; padding: 0; }
+ul.notes li {
+  border-inline-start: 3px solid var(--border); padding: 0.45rem 0.7rem; margin-bottom: 0.45rem;
+  background: var(--bg); border-radius: 0 5px 5px 0; font-size: 0.83rem; line-height: 1.5;
+}
+/* Conflict text comes from the engine and is English inside an RTL page.
+   `plaintext` gives each message the direction of its own first strong
+   character, so English sentences read left-to-right where they sit. */
+ul.notes li, .hint { unicode-bidi: plaintext; }
+ul.notes li.error { border-inline-start-color: var(--error); }
+ul.notes li.warning { border-inline-start-color: var(--warning); }
+ul.notes li .suggestion { display: block; margin-top: 0.2rem; color: var(--text-dim); }
+
+.empty { color: var(--text-dim); font-size: 0.87rem; }
+.hint { color: var(--text-dim); font-size: 0.82rem; margin: 0.5rem 0 0; line-height: 1.6; }
+.actions { display: flex; gap: 0.55rem; flex-wrap: wrap; margin-top: 0.9rem; align-items: center; }
+
+pre.scene {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+  padding: 0.8rem; max-height: 340px; overflow: auto; direction: ltr; text-align: left;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.78rem; line-height: 1.55; margin: 0;
+}
+.caution {
+  background: color-mix(in srgb, var(--error) 12%, var(--surface));
+  border: 1px solid var(--error); border-radius: 6px; padding: 0.7rem 0.9rem;
+  font-size: 0.85rem; line-height: 1.6; margin-top: 1rem;
+}
+.stat { display: flex; gap: 1.25rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
+.stat div { font-size: 0.82rem; color: var(--text-dim); }
+.stat div b { display: block; font-size: 1.3rem; color: var(--text); font-variant-numeric: tabular-nums; font-weight: 600; }
+</style>
+
+<div class="app" id="app"></div>
+
+<script>var StagePatch = (() => {
+  var __defProp = Object.defineProperty;
+  var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+  var __getOwnPropNames = Object.getOwnPropertyNames;
+  var __hasOwnProp = Object.prototype.hasOwnProperty;
+  var __export = (target, all) => {
+    for (var name in all)
+      __defProp(target, name, { get: all[name], enumerable: true });
+  };
+  var __copyProps = (to, from, except, desc) => {
+    if (from && typeof from === "object" || typeof from === "function") {
+      for (let key of __getOwnPropNames(from))
+        if (!__hasOwnProp.call(to, key) && key !== except)
+          __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+    }
+    return to;
+  };
+  var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+
+  // packages/demo/src/entry.ts
+  var entry_exports = {};
+  __export(entry_exports, {
+    M32: () => M32,
+    PRESETS: () => PRESETS,
+    STAGE_ZONES: () => STAGE_ZONES,
+    buildPlan: () => buildPlan,
+    generateScene: () => generateScene,
+    seedBands: () => bands,
+    seedInventory: () => inventory,
+    seedMonitors: () => monitorsByZone,
+    seedRequests: () => requests,
+    toCsv: () => toCsv,
+    toMarkdown: () => toMarkdown
+  });
+
+  // packages/core/src/models/types.ts
+  var STAGE_ZONES = [
+    "drums",
+    "front-left",
+    "front-center",
+    "front-right",
+    "upstage-left",
+    "upstage-center",
+    "upstage-right",
+    "foh"
+  ];
+  var M32 = {
+    model: "M32",
+    localInputs: 32,
+    localOutputs: 16,
+    channelStrips: 32,
+    mixBuses: 16
+  };
+
+  // packages/core/src/presets/library.ts
+  var RATIO_VALUES = [
+    1.1,
+    1.3,
+    1.5,
+    1.7,
+    2,
+    2.5,
+    3,
+    4,
+    5,
+    7,
+    10,
+    20,
+    100
+  ];
+  var noGate = {
+    on: false,
+    mode: "EXP4",
+    threshold: -40,
+    range: 20,
+    attack: 10,
+    hold: 20,
+    release: 250
+  };
+  var noDyn = {
+    on: false,
+    mode: "COMP",
+    detection: "RMS",
+    envelope: "LIN",
+    threshold: -18,
+    ratio: 6,
+    knee: 2,
+    makeupGain: 0,
+    attack: 10,
+    release: 150,
+    position: "POST"
+  };
+  var PRESETS = {
+    kick: {
+      id: "kick",
+      description: "Kick drum \u2014 sub kept, box notched out",
+      color: "RD",
+      icon: 2,
+      phantom: false,
+      gain: 20,
+      eq: [
+        { type: "LCut", freq: 30, gain: 0, q: 2 },
+        { type: "PEQ", freq: 60, gain: 3, q: 1.5 },
+        { type: "PEQ", freq: 380, gain: -4, q: 2.5 },
+        { type: "PEQ", freq: 3500, gain: 3, q: 1.5 }
+      ],
+      gate: { on: true, mode: "GATE", threshold: -35, range: 25, attack: 1, hold: 40, release: 200 },
+      dyn: { ...noDyn, on: true, threshold: -20, ratio: 7, makeupGain: 3, attack: 12, release: 180 }
+    },
+    snare: {
+      id: "snare",
+      description: "Snare \u2014 body kept, cymbal bleed rolled off",
+      color: "RD",
+      icon: 3,
+      phantom: false,
+      gain: 24,
+      eq: [
+        { type: "LCut", freq: 90, gain: 0, q: 2 },
+        { type: "PEQ", freq: 220, gain: 2, q: 1.5 },
+        { type: "PEQ", freq: 800, gain: -3, q: 2 },
+        { type: "PEQ", freq: 5e3, gain: 3, q: 1.5 }
+      ],
+      gate: { on: true, mode: "GATE", threshold: -32, range: 18, attack: 1, hold: 30, release: 150 },
+      dyn: { ...noDyn, on: true, threshold: -18, ratio: 7, makeupGain: 3, attack: 8, release: 150 }
+    },
+    hihat: {
+      id: "hihat",
+      description: "Hi-hat \u2014 low end removed entirely",
+      color: "RD",
+      icon: 4,
+      phantom: true,
+      gain: 28,
+      eq: [
+        { type: "LCut", freq: 300, gain: 0, q: 2 },
+        { type: "PEQ", freq: 900, gain: -3, q: 2 },
+        { type: "HShv", freq: 8e3, gain: 2, q: 1 }
+      ],
+      gate: noGate,
+      dyn: noDyn
+    },
+    tom: {
+      id: "tom",
+      description: "Rack tom \u2014 gated, mids scooped",
+      color: "RD",
+      icon: 5,
+      phantom: false,
+      gain: 24,
+      eq: [
+        { type: "LCut", freq: 70, gain: 0, q: 2 },
+        { type: "PEQ", freq: 400, gain: -4, q: 2.5 },
+        { type: "PEQ", freq: 4e3, gain: 2, q: 1.5 }
+      ],
+      gate: { on: true, mode: "GATE", threshold: -34, range: 22, attack: 2, hold: 60, release: 300 },
+      dyn: { ...noDyn, on: true, threshold: -20, ratio: 6, makeupGain: 2, attack: 15, release: 200 }
+    },
+    "floor-tom": {
+      id: "floor-tom",
+      description: "Floor tom \u2014 gated, lower fundamental",
+      color: "RD",
+      icon: 5,
+      phantom: false,
+      gain: 22,
+      eq: [
+        { type: "LCut", freq: 50, gain: 0, q: 2 },
+        { type: "PEQ", freq: 350, gain: -4, q: 2.5 },
+        { type: "PEQ", freq: 3e3, gain: 2, q: 1.5 }
+      ],
+      gate: { on: true, mode: "GATE", threshold: -34, range: 22, attack: 2, hold: 80, release: 400 },
+      dyn: { ...noDyn, on: true, threshold: -20, ratio: 6, makeupGain: 2, attack: 15, release: 200 }
+    },
+    overhead: {
+      id: "overhead",
+      description: "Overhead \u2014 condenser, steep low cut",
+      color: "RDi",
+      icon: 6,
+      phantom: true,
+      gain: 30,
+      eq: [
+        { type: "LCut", freq: 250, gain: 0, q: 2 },
+        { type: "PEQ", freq: 500, gain: -2, q: 1.5 },
+        { type: "HShv", freq: 1e4, gain: 2, q: 1 }
+      ],
+      gate: noGate,
+      dyn: noDyn
+    },
+    percussion: {
+      id: "percussion",
+      description: "General percussion",
+      color: "MG",
+      icon: 7,
+      phantom: true,
+      gain: 26,
+      eq: [
+        { type: "LCut", freq: 120, gain: 0, q: 2 },
+        { type: "PEQ", freq: 500, gain: -2, q: 2 },
+        { type: "HShv", freq: 8e3, gain: 2, q: 1 }
+      ],
+      gate: noGate,
+      dyn: { ...noDyn, on: true, threshold: -16, ratio: 5, makeupGain: 2, attack: 10, release: 150 }
+    },
+    cajon: {
+      id: "cajon",
+      description: "Cajon \u2014 kick body plus slap top",
+      color: "MG",
+      icon: 7,
+      phantom: false,
+      gain: 24,
+      eq: [
+        { type: "LCut", freq: 50, gain: 0, q: 2 },
+        { type: "PEQ", freq: 90, gain: 2, q: 1.5 },
+        { type: "PEQ", freq: 400, gain: -3, q: 2 },
+        { type: "PEQ", freq: 3e3, gain: 2, q: 1.5 }
+      ],
+      gate: noGate,
+      dyn: { ...noDyn, on: true, threshold: -18, ratio: 6, makeupGain: 2, attack: 10, release: 150 }
+    },
+    darbuka: {
+      id: "darbuka",
+      description: "Darbuka / riq \u2014 snap preserved",
+      color: "MG",
+      icon: 7,
+      phantom: false,
+      gain: 26,
+      eq: [
+        { type: "LCut", freq: 80, gain: 0, q: 2 },
+        { type: "PEQ", freq: 350, gain: -3, q: 2 },
+        { type: "PEQ", freq: 4500, gain: 2, q: 1.5 }
+      ],
+      gate: noGate,
+      dyn: { ...noDyn, on: true, threshold: -16, ratio: 6, makeupGain: 2, attack: 8, release: 120 }
+    },
+    "bass-di": {
+      id: "bass-di",
+      description: "Bass DI \u2014 compressed, mud notched",
+      color: "BL",
+      icon: 10,
+      phantom: false,
+      gain: 12,
+      eq: [
+        { type: "LCut", freq: 35, gain: 0, q: 2 },
+        { type: "PEQ", freq: 250, gain: -3, q: 2 },
+        { type: "PEQ", freq: 800, gain: 2, q: 1.5 }
+      ],
+      gate: noGate,
+      dyn: { ...noDyn, on: true, threshold: -22, ratio: 7, makeupGain: 4, attack: 15, release: 200 }
+    },
+    "bass-mic": {
+      id: "bass-mic",
+      description: "Bass cabinet mic",
+      color: "BL",
+      icon: 10,
+      phantom: false,
+      gain: 20,
+      eq: [
+        { type: "LCut", freq: 35, gain: 0, q: 2 },
+        { type: "PEQ", freq: 250, gain: -3, q: 2 },
+        { type: "PEQ", freq: 1500, gain: 2, q: 1.5 }
+      ],
+      gate: noGate,
+      dyn: { ...noDyn, on: true, threshold: -22, ratio: 7, makeupGain: 4, attack: 15, release: 200 }
+    },
+    "guitar-electric": {
+      id: "guitar-electric",
+      description: "Electric guitar cabinet",
+      color: "CY",
+      icon: 12,
+      phantom: false,
+      gain: 24,
+      eq: [
+        { type: "LCut", freq: 90, gain: 0, q: 2 },
+        { type: "PEQ", freq: 400, gain: -2, q: 2 },
+        { type: "PEQ", freq: 2500, gain: 2, q: 1.5 }
+      ],
+      gate: noGate,
+      dyn: { ...noDyn, on: true, threshold: -18, ratio: 5, makeupGain: 2, attack: 20, release: 200 }
+    },
+    "guitar-acoustic": {
+      id: "guitar-acoustic",
+      description: "Acoustic guitar \u2014 boxiness notched",
+      color: "CY",
+      icon: 13,
+      phantom: false,
+      gain: 18,
+      eq: [
+        { type: "LCut", freq: 100, gain: 0, q: 2 },
+        { type: "PEQ", freq: 220, gain: -4, q: 2.5 },
+        { type: "HShv", freq: 8e3, gain: 2, q: 1 }
+      ],
+      gate: noGate,
+      dyn: { ...noDyn, on: true, threshold: -18, ratio: 5, makeupGain: 2, attack: 20, release: 200 }
+    },
+    keys: {
+      id: "keys",
+      description: "Keyboards DI",
+      color: "GN",
+      icon: 15,
+      phantom: false,
+      gain: 12,
+      eq: [
+        { type: "LCut", freq: 40, gain: 0, q: 2 },
+        { type: "PEQ", freq: 300, gain: -2, q: 2 }
+      ],
+      gate: noGate,
+      dyn: { ...noDyn, on: true, threshold: -20, ratio: 5, makeupGain: 2, attack: 20, release: 200 }
+    },
+    strings: {
+      id: "strings",
+      description: "String section",
+      color: "YE",
+      icon: 17,
+      phantom: true,
+      gain: 28,
+      eq: [
+        { type: "LCut", freq: 120, gain: 0, q: 2 },
+        { type: "PEQ", freq: 400, gain: -2, q: 2 },
+        { type: "HShv", freq: 9e3, gain: 2, q: 1 }
+      ],
+      gate: noGate,
+      dyn: { ...noDyn, on: true, threshold: -20, ratio: 5, makeupGain: 2, attack: 20, release: 250 }
+    },
+    oud: {
+      id: "oud",
+      description: "Oud \u2014 warm body, boom controlled",
+      color: "YE",
+      icon: 13,
+      phantom: false,
+      gain: 26,
+      eq: [
+        { type: "LCut", freq: 80, gain: 0, q: 2 },
+        { type: "PEQ", freq: 200, gain: -3, q: 2 },
+        { type: "PEQ", freq: 3e3, gain: 2, q: 1.5 }
+      ],
+      gate: noGate,
+      dyn: { ...noDyn, on: true, threshold: -20, ratio: 5, makeupGain: 3, attack: 15, release: 200 }
+    },
+    qanun: {
+      id: "qanun",
+      description: "Qanun \u2014 plucked attack preserved",
+      color: "YE",
+      icon: 17,
+      phantom: true,
+      gain: 26,
+      eq: [
+        { type: "LCut", freq: 100, gain: 0, q: 2 },
+        { type: "PEQ", freq: 300, gain: -3, q: 2 },
+        { type: "HShv", freq: 8e3, gain: 2, q: 1 }
+      ],
+      gate: noGate,
+      dyn: { ...noDyn, on: true, threshold: -20, ratio: 5, makeupGain: 3, attack: 15, release: 200 }
+    },
+    violin: {
+      id: "violin",
+      description: "Violin \u2014 harshness tamed",
+      color: "YE",
+      icon: 17,
+      phantom: false,
+      gain: 24,
+      eq: [
+        { type: "LCut", freq: 150, gain: 0, q: 2 },
+        { type: "PEQ", freq: 2500, gain: -3, q: 2.5 },
+        { type: "HShv", freq: 9e3, gain: 2, q: 1 }
+      ],
+      gate: noGate,
+      dyn: { ...noDyn, on: true, threshold: -20, ratio: 5, makeupGain: 3, attack: 15, release: 200 }
+    },
+    woodwind: {
+      id: "woodwind",
+      description: "Clarinet / flute / ney",
+      color: "GNi",
+      icon: 19,
+      phantom: false,
+      gain: 26,
+      eq: [
+        { type: "LCut", freq: 120, gain: 0, q: 2 },
+        { type: "PEQ", freq: 1200, gain: -2, q: 2 },
+        { type: "HShv", freq: 8e3, gain: 2, q: 1 }
+      ],
+      gate: noGate,
+      dyn: { ...noDyn, on: true, threshold: -20, ratio: 5, makeupGain: 3, attack: 15, release: 200 }
+    },
+    brass: {
+      id: "brass",
+      description: "Trumpet / sax / trombone",
+      color: "GNi",
+      icon: 20,
+      phantom: false,
+      gain: 20,
+      eq: [
+        { type: "LCut", freq: 120, gain: 0, q: 2 },
+        { type: "PEQ", freq: 1800, gain: -3, q: 2 }
+      ],
+      gate: noGate,
+      dyn: { ...noDyn, on: true, threshold: -18, ratio: 7, makeupGain: 3, attack: 10, release: 150 }
+    },
+    "vocal-lead": {
+      id: "vocal-lead",
+      description: "Lead vocal \u2014 proximity trimmed, presence lifted",
+      color: "WHi",
+      icon: 22,
+      phantom: false,
+      gain: 30,
+      eq: [
+        { type: "LCut", freq: 100, gain: 0, q: 2 },
+        { type: "PEQ", freq: 300, gain: -3, q: 2 },
+        { type: "PEQ", freq: 3500, gain: 3, q: 1.5 },
+        { type: "HShv", freq: 1e4, gain: 2, q: 1 }
+      ],
+      gate: noGate,
+      dyn: { ...noDyn, on: true, threshold: -20, ratio: 6, makeupGain: 4, attack: 10, release: 150 }
+    },
+    "vocal-backing": {
+      id: "vocal-backing",
+      description: "Backing vocal \u2014 sits behind the lead",
+      color: "WH",
+      icon: 22,
+      phantom: false,
+      gain: 30,
+      eq: [
+        { type: "LCut", freq: 120, gain: 0, q: 2 },
+        { type: "PEQ", freq: 300, gain: -3, q: 2 },
+        { type: "PEQ", freq: 3500, gain: 2, q: 1.5 }
+      ],
+      gate: noGate,
+      dyn: { ...noDyn, on: true, threshold: -20, ratio: 6, makeupGain: 4, attack: 10, release: 150 }
+    },
+    "talk-mic": {
+      id: "talk-mic",
+      description: "Talk mic \u2014 narrow band, heavily filtered",
+      color: "BLi",
+      icon: 22,
+      phantom: false,
+      gain: 30,
+      eq: [
+        { type: "LCut", freq: 150, gain: 0, q: 2 },
+        { type: "PEQ", freq: 400, gain: -3, q: 2 },
+        { type: "PEQ", freq: 3e3, gain: 3, q: 1.5 },
+        { type: "HCut", freq: 12e3, gain: 0, q: 2 }
+      ],
+      gate: noGate,
+      dyn: { ...noDyn, on: true, threshold: -22, ratio: 8, makeupGain: 5, attack: 10, release: 150 }
+    },
+    "playback-di": {
+      id: "playback-di",
+      description: "Playback / track DI \u2014 left flat on purpose",
+      color: "MGi",
+      icon: 25,
+      phantom: false,
+      gain: 6,
+      eq: [{ type: "LCut", freq: 25, gain: 0, q: 2 }],
+      gate: noGate,
+      dyn: noDyn
+    },
+    ambience: {
+      id: "ambience",
+      description: "Audience / ambience mic",
+      color: "CYi",
+      icon: 23,
+      phantom: true,
+      gain: 34,
+      eq: [
+        { type: "LCut", freq: 150, gain: 0, q: 2 },
+        { type: "HShv", freq: 1e4, gain: 2, q: 1 }
+      ],
+      gate: noGate,
+      dyn: noDyn
+    },
+    spare: {
+      id: "spare",
+      description: "Unused strip \u2014 flat and safe",
+      color: "OFF",
+      icon: 1,
+      phantom: false,
+      gain: 0,
+      eq: [],
+      gate: noGate,
+      dyn: noDyn
+    }
+  };
+  function getPreset(tag) {
+    return PRESETS[tag];
+  }
+
+  // packages/core/src/planner/order.ts
+  var ORDER = [
+    "kick",
+    "snare",
+    "hihat",
+    "tom",
+    "floor-tom",
+    "overhead",
+    "percussion",
+    "cajon",
+    "darbuka",
+    "bass-di",
+    "bass-mic",
+    "guitar-electric",
+    "guitar-acoustic",
+    "keys",
+    "oud",
+    "qanun",
+    "violin",
+    "strings",
+    "woodwind",
+    "brass",
+    "vocal-lead",
+    "vocal-backing",
+    "talk-mic",
+    "playback-di",
+    "ambience",
+    "spare"
+  ];
+  var RANK = new Map(ORDER.map((tag, i) => [tag, i]));
+  function instrumentRank(tag) {
+    return RANK.get(tag) ?? ORDER.length;
+  }
+
+  // packages/core/src/planner/merge.ts
+  function normalizeLabel(label) {
+    return label.toLowerCase().replace(/[()\/\-_.,+]/g, " ").replace(/\b(mic|microphone|line|channel|ch)\b/g, " ").replace(/\s+/g, " ").trim();
+  }
+  function mergeRequests(requests2, bands2) {
+    const bandSlot = new Map(bands2.map((b) => [b.id, b.slot]));
+    const groups = /* @__PURE__ */ new Map();
+    const standalone = [];
+    for (const req2 of requests2) {
+      if (!req2.shareable) {
+        standalone.push({ key: req2.id, label: req2.label, requests: [req2] });
+        continue;
+      }
+      const key = [
+        "shared",
+        req2.instrument,
+        req2.sourceType,
+        req2.stageZone,
+        normalizeLabel(req2.label)
+      ].join("|");
+      const existing = groups.get(key);
+      if (existing) {
+        existing.requests.push(req2);
+      } else {
+        groups.set(key, { key, label: req2.label, requests: [req2] });
+      }
+    }
+    const all = [...groups.values(), ...standalone];
+    all.sort((a, b) => {
+      const ai = instrumentRank(a.requests[0].instrument);
+      const bi = instrumentRank(b.requests[0].instrument);
+      if (ai !== bi) return ai - bi;
+      const aSlot = Math.min(...a.requests.map((r) => bandSlot.get(r.bandId) ?? 99));
+      const bSlot = Math.min(...b.requests.map((r) => bandSlot.get(r.bandId) ?? 99));
+      if (aSlot !== bSlot) return aSlot - bSlot;
+      return a.label.localeCompare(b.label);
+    });
+    return all;
+  }
+
+  // packages/core/src/planner/multicore.ts
+  var ZONE_KEYWORDS = {
+    drums: ["drum", "kit", "\u05EA\u05D5\u05E4"],
+    "front-left": ["front l", "fl", "\u05D8\u05E0\u05D5\u05E8\u05D8 \u05E9\u05DE\u05D0\u05DC"],
+    "front-center": ["front c", "center", "centre", "\u05DE\u05E8\u05DB\u05D6"],
+    "front-right": ["front r", "fr", "\u05D8\u05E0\u05D5\u05E8\u05D8 \u05D9\u05DE\u05D9\u05DF"],
+    "upstage-left": ["upstage l", "up l", "back l", "\u05D0\u05D7\u05D5\u05E8\u05D4 \u05E9\u05DE\u05D0\u05DC"],
+    "upstage-center": ["upstage c", "back c", "\u05D0\u05D7\u05D5\u05E8\u05D4 \u05DE\u05E8\u05DB\u05D6"],
+    "upstage-right": ["upstage r", "up r", "back r", "\u05D0\u05D7\u05D5\u05E8\u05D4 \u05D9\u05DE\u05D9\u05DF"],
+    foh: ["foh", "front of house"]
+  };
+  function nameAffinity(multicoreName, zone) {
+    const name = multicoreName.toLowerCase();
+    return ZONE_KEYWORDS[zone].some((kw) => name.includes(kw));
+  }
+  function allocateMulticores(demands, multicores) {
+    const conflicts = [];
+    const assignment = {};
+    const available = [...multicores].sort((a, b) => a.inputs - b.inputs);
+    const taken = /* @__PURE__ */ new Set();
+    const ordered = [...demands].filter((d) => d.inputs > 0 || d.returns > 0).sort((a, b) => b.inputs + b.returns - (a.inputs + a.returns));
+    for (const demand of ordered) {
+      const fits = available.filter(
+        (m) => !taken.has(m.name) && m.inputs >= demand.inputs && m.outputs >= demand.returns
+      );
+      const fit = fits.find((m) => nameAffinity(m.name, demand.zone)) ?? fits[0];
+      if (fit) {
+        assignment[demand.zone] = fit.name;
+        taken.add(fit.name);
+        continue;
+      }
+      const spare = available.find((m) => !taken.has(m.name));
+      if (spare) {
+        assignment[demand.zone] = spare.name;
+        taken.add(spare.name);
+        conflicts.push({
+          severity: "error",
+          code: "multicore-capacity-exceeded",
+          message: `Zone "${demand.zone}" needs ${demand.inputs} inputs and ${demand.returns} returns, but "${spare.name}" only carries ${spare.inputs} in / ${spare.outputs} out.`,
+          refs: [demand.zone, spare.name],
+          suggestion: demand.inputs > spare.inputs ? "Split the zone across two snakes, or sub-snake the drum kit." : "Reduce monitor sends to this zone, or run a separate return line."
+        });
+      } else {
+        conflicts.push({
+          severity: "error",
+          code: "no-multicore-for-zone",
+          message: `No multicore left for zone "${demand.zone}" (${demand.inputs} inputs, ${demand.returns} returns).`,
+          refs: [demand.zone],
+          suggestion: "Add a multicore to the inventory, or combine two adjacent zones."
+        });
+      }
+    }
+    return { assignment, conflicts };
+  }
+  function validateAssignment(assignment, demands, multicores) {
+    const conflicts = [];
+    const byName = new Map(multicores.map((m) => [m.name, m]));
+    const seen = /* @__PURE__ */ new Map();
+    for (const demand of demands) {
+      const name = assignment[demand.zone];
+      if (!name) {
+        if (demand.inputs > 0) {
+          conflicts.push({
+            severity: "error",
+            code: "no-multicore-for-zone",
+            message: `Zone "${demand.zone}" has ${demand.inputs} inputs but no multicore assigned.`,
+            refs: [demand.zone]
+          });
+        }
+        continue;
+      }
+      const mc = byName.get(name);
+      if (!mc) {
+        conflicts.push({
+          severity: "error",
+          code: "no-multicore-for-zone",
+          message: `Zone "${demand.zone}" is assigned to "${name}", which is not in the inventory.`,
+          refs: [demand.zone, name]
+        });
+        continue;
+      }
+      const alreadyOn = seen.get(name);
+      if (alreadyOn) {
+        conflicts.push({
+          severity: "warning",
+          code: "multicore-capacity-exceeded",
+          message: `Multicore "${name}" serves both "${alreadyOn}" and "${demand.zone}".`,
+          refs: [name, alreadyOn, demand.zone],
+          suggestion: "Confirm the snake physically reaches both positions."
+        });
+      }
+      seen.set(name, demand.zone);
+      if (demand.inputs > mc.inputs) {
+        conflicts.push({
+          severity: "error",
+          code: "multicore-capacity-exceeded",
+          message: `Zone "${demand.zone}" needs ${demand.inputs} inputs but "${name}" carries ${mc.inputs}.`,
+          refs: [demand.zone, name]
+        });
+      }
+      if (demand.returns > mc.outputs) {
+        conflicts.push({
+          severity: "error",
+          code: "multicore-capacity-exceeded",
+          message: `Zone "${demand.zone}" needs ${demand.returns} returns but "${name}" carries ${mc.outputs}.`,
+          refs: [demand.zone, name]
+        });
+      }
+    }
+    return conflicts;
+  }
+
+  // packages/core/src/planner/plan.ts
+  function buildInputPool(inventory2) {
+    const pool = [];
+    for (const box of inventory2.stageBoxes) {
+      for (let i = 1; i <= box.inputs; i++) {
+        pool.push({
+          device: box.name,
+          connector: i,
+          busType: box.aesPort === "A" ? "AES50-A" : "AES50-B",
+          busIndex: box.aesOffset + i
+        });
+      }
+    }
+    for (let i = 1; i <= inventory2.console.localInputs; i++) {
+      pool.push({ device: "local", connector: i, busType: "LOCAL", busIndex: i });
+    }
+    return pool;
+  }
+  function zoneDemands(sources, monitorsByZone2) {
+    const inputs = /* @__PURE__ */ new Map();
+    for (const src of sources) {
+      const zone = src.requests[0].stageZone;
+      inputs.set(zone, (inputs.get(zone) ?? 0) + 1);
+    }
+    const zones = /* @__PURE__ */ new Set([
+      ...inputs.keys(),
+      ...Object.keys(monitorsByZone2)
+    ]);
+    return [...zones].map((zone) => ({
+      zone,
+      inputs: inputs.get(zone) ?? 0,
+      returns: monitorsByZone2[zone] ?? 0
+    }));
+  }
+  function buildPlan(input) {
+    const { event, inventory: inventory2, bands: bands2, requests: requests2 } = input;
+    const monitorsByZone2 = input.monitorsByZone ?? {};
+    const conflicts = [];
+    const sources = mergeRequests(requests2, bands2);
+    const demands = zoneDemands(sources, monitorsByZone2);
+    let assignment;
+    if (input.multicoreAssignment) {
+      assignment = input.multicoreAssignment;
+      conflicts.push(...validateAssignment(assignment, demands, inventory2.multicores));
+    } else {
+      const allocated = allocateMulticores(demands, inventory2.multicores);
+      assignment = allocated.assignment;
+      conflicts.push(...allocated.conflicts);
+    }
+    const pool = buildInputPool(inventory2);
+    const strips = inventory2.console.channelStrips;
+    const channels = [];
+    const lineCounter = /* @__PURE__ */ new Map();
+    const runs = /* @__PURE__ */ new Map();
+    sources.forEach((src, index) => {
+      const channelNumber = index + 1;
+      const head = src.requests[0];
+      if (channelNumber > strips) {
+        conflicts.push({
+          severity: "error",
+          code: "channel-capacity-exceeded",
+          message: `"${src.label}" does not fit: the ${inventory2.console.model} has ${strips} channel strips and this is source ${channelNumber}.`,
+          refs: src.requests.map((r) => r.id),
+          suggestion: "Share more sources between bands, or sub-mix the drum kit."
+        });
+        return;
+      }
+      const physical = pool[index];
+      if (!physical) {
+        conflicts.push({
+          severity: "error",
+          code: "input-capacity-exceeded",
+          message: `"${src.label}" has no physical input left: the inventory provides ${pool.length} inputs.`,
+          refs: src.requests.map((r) => r.id),
+          suggestion: "Add a stage box, or free an input by sharing a source."
+        });
+        return;
+      }
+      const preset = getPreset(head.instrument);
+      const zone = head.stageZone;
+      let multicore;
+      const snake = assignment[zone];
+      if (snake) {
+        const line = (lineCounter.get(snake) ?? 0) + 1;
+        lineCounter.set(snake, line);
+        multicore = { multicore: snake, line, channelNumber };
+        let run = runs.get(snake);
+        if (!run) {
+          run = { multicore: snake, stageZone: zone, lines: [], returnsUsed: monitorsByZone2[zone] ?? 0 };
+          runs.set(snake, run);
+        }
+        run.lines.push(multicore);
+      }
+      channels.push({
+        channelNumber,
+        name: src.label,
+        instrument: head.instrument,
+        sourceType: head.sourceType,
+        micModel: head.micModel,
+        // A rider asking for phantom always wins over the preset default; a
+        // condenser that arrives unpowered is a dead channel at showtime.
+        phantom: src.requests.some((r) => r.phantom) || preset.phantom,
+        stageZone: zone,
+        requestIds: src.requests.map((r) => r.id),
+        bandIds: [...new Set(src.requests.map((r) => r.bandId))],
+        input: physical,
+        multicore,
+        presetId: head.instrument,
+        notes: src.requests.map((r) => r.notes).filter(Boolean).join("; ") || void 0
+      });
+    });
+    conflicts.push(...detectPatchConflicts(channels));
+    return {
+      event,
+      inventory: inventory2,
+      bands: bands2,
+      channels,
+      multicoreLayout: [...runs.values()],
+      conflicts
+    };
+  }
+  function detectPatchConflicts(channels) {
+    const conflicts = [];
+    const byConnector = /* @__PURE__ */ new Map();
+    for (const ch of channels) {
+      const key = `${ch.input.device}:${ch.input.connector}`;
+      const list = byConnector.get(key) ?? [];
+      list.push(ch);
+      byConnector.set(key, list);
+    }
+    for (const [key, list] of byConnector) {
+      if (list.length > 1) {
+        conflicts.push({
+          severity: "error",
+          code: "duplicate-physical-input",
+          message: `Input ${key} is patched to ${list.length} channels: ${list.map((c) => c.name).join(", ")}.`,
+          refs: list.map((c) => String(c.channelNumber))
+        });
+      }
+    }
+    return conflicts;
+  }
+
+  // packages/core/src/export/megapatch.ts
+  var COLUMNS = [
+    "Ch",
+    "Name",
+    "Source",
+    "Mic / DI",
+    "Phantom",
+    "Zone",
+    "Multicore",
+    "Line",
+    "Input",
+    "Preset",
+    "Bands",
+    "Notes"
+  ];
+  function row(plan, ch) {
+    const bandNames = ch.bandIds.map((id) => plan.bands.find((b) => b.id === id)?.name ?? id).join(" + ");
+    return [
+      String(ch.channelNumber),
+      ch.name,
+      ch.sourceType.toUpperCase(),
+      ch.micModel ?? "",
+      ch.phantom ? "+48V" : "",
+      ch.stageZone,
+      ch.multicore?.multicore ?? "\u2014",
+      ch.multicore ? String(ch.multicore.line) : "\u2014",
+      `${ch.input.device} ${ch.input.connector}`,
+      getPreset(ch.presetId).description,
+      bandNames,
+      ch.notes ?? ""
+    ];
+  }
+  function csvCell(value) {
+    return /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
+  }
+  function toCsv(plan) {
+    const lines = [COLUMNS.join(",")];
+    for (const ch of plan.channels) {
+      lines.push(row(plan, ch).map(csvCell).join(","));
+    }
+    return lines.join("\n") + "\n";
+  }
+  function toMarkdown(plan) {
+    const out = [
+      `# Megapatch \u2014 ${plan.event.name}`,
+      "",
+      `**${plan.event.venue}** \xB7 ${plan.event.date} \xB7 ${plan.inventory.console.model}`,
+      "",
+      `| ${COLUMNS.join(" | ")} |`,
+      `| ${COLUMNS.map(() => "---").join(" | ")} |`
+    ];
+    for (const ch of plan.channels) {
+      out.push(`| ${row(plan, ch).map((c) => c.replace(/\|/g, "\\|")).join(" | ")} |`);
+    }
+    out.push("", "## Stage layout", "");
+    for (const run of plan.multicoreLayout) {
+      const lines = run.lines.map((l) => l.channelNumber).join(", ");
+      out.push(
+        `- **${run.multicore}** \u2192 ${run.stageZone} \u2014 ${run.lines.length} inputs (ch ${lines}), ${run.returnsUsed} returns`
+      );
+    }
+    if (plan.conflicts.length > 0) {
+      out.push("", "## Conflicts", "");
+      for (const c of plan.conflicts) {
+        const tail = c.suggestion ? ` _${c.suggestion}_` : "";
+        out.push(`- **${c.severity.toUpperCase()}** ${c.message}${tail}`);
+      }
+    } else {
+      out.push("", "## Conflicts", "", "None \u2014 the plan fits the inventory.");
+    }
+    return out.join("\n") + "\n";
+  }
+
+  // packages/core/src/scn/format.ts
+  function level(db) {
+    const v = db.toFixed(1);
+    return db >= 0 ? `+${v}` : v;
+  }
+  function eqGain(db) {
+    const v = db.toFixed(2);
+    return db >= 0 ? `+${v}` : v;
+  }
+  function freq(hz) {
+    if (hz < 1e3) return hz.toFixed(1);
+    const k = Math.floor(hz / 1e3);
+    const rem = Math.round((hz - k * 1e3) / 10);
+    return `${k}k${String(rem).padStart(2, "0")}`;
+  }
+  function q(value) {
+    return value.toFixed(1);
+  }
+  function ms(value) {
+    return String(Math.round(value));
+  }
+  function onOff(value) {
+    return value ? "ON" : "OFF";
+  }
+  function quoted(text) {
+    return `"${text.replace(/"/g, "")}"`;
+  }
+  var MAX_NAME_LENGTH = 12;
+  function scribbleName(text) {
+    return text.trim().slice(0, MAX_NAME_LENGTH);
+  }
+  function ch2(n) {
+    return String(n).padStart(2, "0");
+  }
+  function ha3(n) {
+    return String(n).padStart(3, "0");
+  }
+
+  // packages/core/src/scn/generate.ts
+  var ROUTING_BLOCK_SIZE = 8;
+  var ROUTING_TOKENS = {
+    LOCAL: ["AN1-8", "AN9-16", "AN17-24", "AN25-32"],
+    "AES50-A": ["A1-8", "A9-16", "A17-24", "A25-32"],
+    "AES50-B": ["B1-8", "B9-16", "B17-24", "B25-32"],
+    CARD: ["card1-8", "card9-16", "card17-24", "card25-32"]
+  };
+  function routingBlocks(channels) {
+    const blocks = [];
+    for (let b = 0; b < 4; b++) {
+      const first = b * ROUTING_BLOCK_SIZE + 1;
+      const last = first + ROUTING_BLOCK_SIZE - 1;
+      const inBlock = channels.filter(
+        (c) => c.channelNumber >= first && c.channelNumber <= last
+      );
+      const tally = /* @__PURE__ */ new Map();
+      for (const c of inBlock) {
+        tally.set(c.input.busType, (tally.get(c.input.busType) ?? 0) + 1);
+      }
+      let winner = "LOCAL";
+      let best = 0;
+      for (const [bus, count] of tally) {
+        if (count > best) {
+          best = count;
+          winner = bus;
+        }
+      }
+      blocks.push(ROUTING_TOKENS[winner][b]);
+    }
+    return blocks;
+  }
+  function configLine(ch, preset) {
+    const source = ch.input.busIndex;
+    return `/ch/${ch2(ch.channelNumber)}/config ${quoted(scribbleName(ch.name))} ${preset.icon} ${preset.color} ${source}`;
+  }
+  function preampLine(ch, preset) {
+    const lcut = preset.eq.find((b) => b.type === "LCut");
+    const hpfOn = onOff(Boolean(lcut));
+    const hpfFreq = lcut ? Math.round(lcut.freq) : 100;
+    return `/ch/${ch2(ch.channelNumber)}/preamp ${level(0)} OFF ${hpfOn} 12 ${hpfFreq}`;
+  }
+  function gateLines(ch, preset) {
+    const g = preset.gate;
+    const n = ch2(ch.channelNumber);
+    return [
+      `/ch/${n}/gate ${onOff(g.on)} ${g.mode} ${level(g.threshold)} ${g.range.toFixed(1)} ${ms(g.attack)} ${ms(g.hold)} ${ms(g.release)} 0`,
+      `/ch/${n}/gate/filter OFF 3.0 ${freq(1390)}`
+    ];
+  }
+  function dynLines(ch, preset) {
+    const d = preset.dyn;
+    const n = ch2(ch.channelNumber);
+    const ratio = RATIO_VALUES[d.ratio] ?? RATIO_VALUES[6];
+    return [
+      `/ch/${n}/dyn ${onOff(d.on)} ${d.mode} ${d.detection} ${d.envelope} ${level(d.threshold)} ${ratio.toFixed(1)} ${d.knee} ${d.makeupGain.toFixed(2)} ${ms(d.attack)} 0.03 ${ms(d.release)} ${d.position} 0 100 OFF`,
+      `/ch/${n}/dyn/filter OFF 3.0 ${freq(1390)}`
+    ];
+  }
+  function eqLines(ch, preset) {
+    const n = ch2(ch.channelNumber);
+    const lines = [`/ch/${n}/eq ${onOff(preset.eq.length > 0)}`];
+    const bands2 = preset.eq.slice(0, 4);
+    const defaults = [
+      ["LCut", 100],
+      ["PEQ", 500],
+      ["PEQ", 2e3],
+      ["HShv", 1e4]
+    ];
+    for (let i = 0; i < 4; i++) {
+      const band = bands2[i];
+      if (band) {
+        lines.push(
+          `/ch/${n}/eq/${i + 1} ${band.type} ${freq(band.freq)} ${eqGain(band.gain)} ${q(band.q)}`
+        );
+      } else {
+        const [type, hz] = defaults[i];
+        lines.push(`/ch/${n}/eq/${i + 1} ${type} ${freq(hz)} ${eqGain(0)} ${q(2)}`);
+      }
+    }
+    return lines;
+  }
+  function mixLines(ch) {
+    const n = ch2(ch.channelNumber);
+    const lines = [`/ch/${n}/mix ON -oo ON +0 OFF -oo`];
+    for (let bus = 1; bus <= 16; bus++) {
+      lines.push(`/ch/${n}/mix/${ch2(bus)} ON -oo +0 PRE`);
+    }
+    return lines;
+  }
+  function headampIndex(input) {
+    const base = { LOCAL: 0, "AES50-A": 32, "AES50-B": 80, CARD: 0 }[input.busType];
+    return base + (input.busIndex - 1);
+  }
+  function headampLine(ch, preset) {
+    const phantom = ch.phantom || preset.phantom;
+    return `/headamp/${ha3(headampIndex(ch.input))} ${level(preset.gain)} ${onOff(phantom)}`;
+  }
+  function planToSceneLines(plan, options = {}) {
+    const name = scribbleName(options.sceneName ?? plan.event.name);
+    const note = options.sceneNote ?? `${plan.event.venue} ${plan.event.date}`;
+    const lines = [
+      `#4.0# ${quoted(name)} ${quoted(note)} %000000000 1`,
+      `/config/routing/IN ${routingBlocks(plan.channels).join(" ")}`
+    ];
+    const byNumber = new Map(plan.channels.map((c) => [c.channelNumber, c]));
+    const strips = plan.inventory.console.channelStrips;
+    for (let n = 1; n <= strips; n++) {
+      const ch = byNumber.get(n);
+      if (ch) {
+        const preset = getPreset(ch.presetId);
+        lines.push(
+          configLine(ch, preset),
+          preampLine(ch, preset),
+          ...gateLines(ch, preset),
+          ...dynLines(ch, preset),
+          ...eqLines(ch, preset),
+          ...mixLines(ch)
+        );
+      } else {
+        const spare = getPreset("spare");
+        const blank = {
+          channelNumber: n,
+          name: "",
+          instrument: "spare",
+          sourceType: "line",
+          phantom: false,
+          stageZone: "foh",
+          requestIds: [],
+          bandIds: [],
+          input: { device: "local", connector: n, busType: "LOCAL", busIndex: n },
+          presetId: "spare"
+        };
+        lines.push(
+          configLine(blank, spare),
+          preampLine(blank, spare),
+          ...gateLines(blank, spare),
+          ...dynLines(blank, spare),
+          ...eqLines(blank, spare),
+          ...mixLines(blank)
+        );
+      }
+    }
+    for (const ch of plan.channels) {
+      lines.push(headampLine(ch, getPreset(ch.presetId)));
+    }
+    return lines;
+  }
+  function mergeOntoBase(base, generated) {
+    const pathOf = (line) => line.split(/\s+/, 1)[0] ?? "";
+    const overrides = new Map(generated.map((l) => [pathOf(l), l]));
+    const used = /* @__PURE__ */ new Set();
+    const merged = base.split(/\r?\n/).map((line) => {
+      const path = pathOf(line);
+      const override = overrides.get(path);
+      if (override && path.startsWith("/")) {
+        used.add(path);
+        return override;
+      }
+      return line;
+    });
+    for (const line of generated) {
+      const path = pathOf(line);
+      if (path.startsWith("/") && !used.has(path)) merged.push(line);
+    }
+    return merged.join("\n");
+  }
+  function generateScene(plan, options = {}) {
+    const lines = planToSceneLines(plan, options);
+    if (options.baseScene) return mergeOntoBase(options.baseScene, lines);
+    return lines.join("\n") + "\n";
+  }
+
+  // packages/core/test/fixture.ts
+  var bands = [
+    { id: "mozaika", name: "Mozaika", slot: 1 },
+    { id: "musa", name: "Musa Berlin", slot: 2 }
+  ];
+  var inventory = {
+    console: M32,
+    stageBoxes: [
+      { name: "DL32 Stage", inputs: 32, outputs: 16, aesPort: "A", aesOffset: 0 }
+    ],
+    multicores: [
+      { name: "Multi Drums", inputs: 12, outputs: 4 },
+      { name: "Multi Front L", inputs: 8, outputs: 4 },
+      { name: "Multi Front R", inputs: 8, outputs: 4 },
+      { name: "Multi Upstage L", inputs: 8, outputs: 4 }
+    ]
+  };
+  var seq = 0;
+  function req(r) {
+    return { id: `r${++seq}`, ...r };
+  }
+  var requests = [
+    // House drum kit — both bands use it, so it must collapse to one strip each.
+    req({ bandId: "mozaika", label: "Kick", instrument: "kick", sourceType: "mic", micModel: "Beta91", phantom: true, stageZone: "drums", shareable: true }),
+    req({ bandId: "musa", label: "Kick", instrument: "kick", sourceType: "mic", micModel: "Beta91", phantom: true, stageZone: "drums", shareable: true }),
+    req({ bandId: "mozaika", label: "Snare", instrument: "snare", sourceType: "mic", micModel: "SM57", phantom: false, stageZone: "drums", shareable: true }),
+    req({ bandId: "musa", label: "Snare", instrument: "snare", sourceType: "mic", micModel: "SM57", phantom: false, stageZone: "drums", shareable: true }),
+    req({ bandId: "mozaika", label: "Tom 1", instrument: "tom", sourceType: "mic", micModel: "e904", phantom: false, stageZone: "drums", shareable: true }),
+    req({ bandId: "mozaika", label: "Tom 2", instrument: "tom", sourceType: "mic", micModel: "e904", phantom: false, stageZone: "drums", shareable: true }),
+    req({ bandId: "mozaika", label: "Floor Tom", instrument: "floor-tom", sourceType: "mic", micModel: "e904", phantom: false, stageZone: "drums", shareable: true }),
+    req({ bandId: "mozaika", label: "OH L", instrument: "overhead", sourceType: "mic", micModel: "Pencil", phantom: true, stageZone: "drums", shareable: true, stereoPairKey: "oh" }),
+    req({ bandId: "mozaika", label: "OH R", instrument: "overhead", sourceType: "mic", micModel: "Pencil", phantom: true, stageZone: "drums", shareable: true, stereoPairKey: "oh" }),
+    // Mozaika only.
+    req({ bandId: "mozaika", label: "Bass XLR 1", instrument: "bass-di", sourceType: "di", micModel: "DI / Open XLR", phantom: false, stageZone: "upstage-left", shareable: false }),
+    req({ bandId: "mozaika", label: "Guitar DI", instrument: "guitar-electric", sourceType: "di", micModel: "DI", phantom: false, stageZone: "front-right", shareable: false }),
+    req({ bandId: "mozaika", label: "Oud Pro35", instrument: "oud", sourceType: "mic", micModel: "Pro35", phantom: true, stageZone: "front-right", shareable: false }),
+    req({ bandId: "mozaika", label: "Qanun XLR", instrument: "qanun", sourceType: "line", micModel: "Open XLR + Phantom", phantom: true, stageZone: "front-right", shareable: false }),
+    req({ bandId: "mozaika", label: "Violin", instrument: "violin", sourceType: "di", micModel: "DI", phantom: false, stageZone: "front-left", shareable: false }),
+    req({ bandId: "mozaika", label: "Darbuka", instrument: "darbuka", sourceType: "mic", micModel: "SM57", phantom: false, stageZone: "upstage-left", shareable: false }),
+    req({ bandId: "mozaika", label: "Cajon 1", instrument: "cajon", sourceType: "mic", micModel: "SM91", phantom: true, stageZone: "upstage-left", shareable: false }),
+    // Musa Berlin only.
+    req({ bandId: "musa", label: "Keys L", instrument: "keys", sourceType: "di", micModel: "DI", phantom: false, stageZone: "front-left", shareable: false, stereoPairKey: "keys" }),
+    req({ bandId: "musa", label: "Keys R", instrument: "keys", sourceType: "di", micModel: "DI", phantom: false, stageZone: "front-left", shareable: false, stereoPairKey: "keys" }),
+    req({ bandId: "musa", label: "Keys Talk", instrument: "talk-mic", sourceType: "mic", micModel: "Pro35", phantom: true, stageZone: "front-left", shareable: false }),
+    req({ bandId: "musa", label: "Clarinet WL", instrument: "woodwind", sourceType: "wireless", micModel: "Wireless RX", phantom: false, stageZone: "front-center", shareable: false }),
+    req({ bandId: "musa", label: "Clarinet Bkp", instrument: "woodwind", sourceType: "mic", micModel: "SM57", phantom: false, stageZone: "front-center", shareable: false }),
+    req({ bandId: "musa", label: "Clarinet Talk", instrument: "talk-mic", sourceType: "mic", micModel: "SM57", phantom: false, stageZone: "front-center", shareable: false })
+  ];
+  var monitorsByZone = {
+    drums: 1,
+    "front-left": 2,
+    "front-center": 2,
+    "front-right": 2,
+    "upstage-left": 1
+  };
+  return __toCommonJS(entry_exports);
+})();
+</script>
+<script>/*
+ * StagePatch demo UI.
+ *
+ * The planning, conflict detection and scene generation all come from the real
+ * engine bundled above as `StagePatch` — this file only draws it. Nothing here
+ * reimplements planner logic, so what the page shows is what the product does.
+ */
+(function () {
+  'use strict';
+
+  const {
+    buildPlan, generateScene, toCsv, PRESETS, STAGE_ZONES, M32,
+    seedBands, seedInventory, seedRequests, seedMonitors,
+  } = StagePatch;
+
+  const ZONE_LABELS = {
+    drums: 'תופים',
+    'front-left': 'קדמת שמאל',
+    'front-center': 'קדמת מרכז',
+    'front-right': 'קדמת ימין',
+    'upstage-left': 'אחורה שמאל',
+    'upstage-center': 'אחורה מרכז',
+    'upstage-right': 'אחורה ימין',
+    foh: 'FOH',
+  };
+
+  const INSTRUMENTS = Object.keys(PRESETS);
+
+  /** Keywords that map a pasted line to an instrument, longest match first. */
+  const KEYWORDS = [
+    ['kick', ['kick', 'bass drum', 'בס דראם', 'קיק']],
+    ['snare', ['snare', 'סנר', 'קלבש']],
+    ['hihat', ['hi-hat', 'hihat', 'hh', 'היהט']],
+    ['floor-tom', ['floor tom', 'floortom', 'פלור']],
+    ['tom', ['tom', 'טום']],
+    ['overhead', ['overhead', 'oh l', 'oh r', ' oh', 'מצילות']],
+    ['cajon', ['cajon', 'קחון']],
+    ['darbuka', ['darbuka', 'riq', 'דרבוקה', 'ריק']],
+    ['bass-di', ['bass', 'בס', 'קונטרבס']],
+    ['guitar-acoustic', ['acoustic', 'אקוסטית']],
+    ['guitar-electric', ['guitar', 'גיטרה']],
+    ['keys', ['keys', 'keyboard', 'piano', 'קליד', 'פסנתר']],
+    ['oud', ['oud', 'עוד']],
+    ['qanun', ['qanun', 'kanun', 'קאנון']],
+    ['violin', ['violin', 'כינור']],
+    ['woodwind', ['clarinet', 'flute', 'ney', 'sax', 'קלרינט', 'חליל']],
+    ['brass', ['trumpet', 'trombone', 'חצוצרה']],
+    ['talk-mic', ['talk', 'speech', 'דיבור']],
+    ['vocal-lead', ['lead vox', 'lead vocal', 'סולן', 'שירה']],
+    ['vocal-backing', ['bv', 'backing', 'ליווי']],
+    ['playback-di', ['playback', 'track', 'פלייבק']],
+  ];
+
+  function guessInstrument(label) {
+    const text = label.toLowerCase();
+    for (const [tag, words] of KEYWORDS) {
+      if (words.some((w) => text.includes(w))) return tag;
+    }
+    return 'keys';
+  }
+
+  // --- state ---------------------------------------------------------------
+
+  const state = {
+    step: 'inventory',
+    event: { name: 'Safed Day 3', date: '2026-08-20', venue: 'Ashtam Stage' },
+    inventory: clone(seedInventory),
+    bands: [],
+    requests: [],
+    monitorsByZone: {},
+    plan: null,
+    pasteText: '',
+    downloadNote: '',
+  };
+
+  function clone(value) {
+    return JSON.parse(JSON.stringify(value));
+  }
+
+  function replan() {
+    state.plan = state.requests.length
+      ? buildPlan({
+          event: state.event,
+          inventory: state.inventory,
+          bands: state.bands,
+          requests: state.requests,
+          monitorsByZone: state.monitorsByZone,
+        })
+      : null;
+  }
+
+  function loadRealRiders() {
+    state.bands = clone(seedBands);
+    state.requests = clone(seedRequests);
+    state.monitorsByZone = clone(seedMonitors);
+    replan();
+    state.step = 'patch';
+    render();
+  }
+
+  function addBlankChannel() {
+    ensureManualBand();
+    const n = state.requests.length + 1;
+    state.requests.push({
+      id: 'manual-' + n + '-' + Date.now(),
+      bandId: 'manual',
+      label: 'ערוץ ' + n,
+      instrument: 'keys',
+      sourceType: 'di',
+      phantom: false,
+      stageZone: 'front-center',
+      shareable: false,
+    });
+    replan();
+    render();
+  }
+
+  function ensureManualBand() {
+    if (!state.bands.some((b) => b.id === 'manual')) {
+      state.bands.push({ id: 'manual', name: 'הזנה ידנית', slot: state.bands.length + 1 });
+    }
+  }
+
+  /**
+   * Parse a pasted channel list. Deliberately simple and deterministic — one
+   * line per channel, optional `|`-separated mic and zone. This is a
+   * convenience for the demo, NOT the product's rider extraction.
+   */
+  function applyPaste() {
+    const lines = state.pasteText.split('\n').map((l) => l.trim()).filter(Boolean);
+    if (lines.length === 0) return;
+
+    ensureManualBand();
+    state.requests = state.requests.filter((r) => r.bandId !== 'manual');
+
+    lines.forEach((line, i) => {
+      const parts = line.split('|').map((p) => p.trim());
+      const label = parts[0];
+      const mic = parts[1] || undefined;
+      const zoneInput = (parts[2] || '').toLowerCase();
+      const zone = STAGE_ZONES.includes(zoneInput) ? zoneInput : inferZone(label);
+
+      state.requests.push({
+        id: 'paste-' + (i + 1),
+        bandId: 'manual',
+        label: label.slice(0, 12),
+        instrument: guessInstrument(label),
+        sourceType: /\bdi\b/i.test(mic || '') ? 'di' : 'mic',
+        micModel: mic,
+        phantom: /condenser|phantom|48/i.test(mic || ''),
+        stageZone: zone,
+        shareable: false,
+      });
+    });
+
+    state.pasteText = '';
+    replan();
+    state.step = 'patch';
+    render();
+  }
+
+  function inferZone(label) {
+    const tag = guessInstrument(label);
+    if (['kick', 'snare', 'hihat', 'tom', 'floor-tom', 'overhead'].includes(tag)) return 'drums';
+    return 'front-center';
+  }
+
+  function clearAll() {
+    state.bands = [];
+    state.requests = [];
+    state.monitorsByZone = {};
+    state.plan = null;
+    state.step = 'channels';
+    render();
+  }
+
+  // --- rendering helpers ---------------------------------------------------
+
+  function el(tag, attrs, children) {
+    const node = document.createElement(tag);
+    for (const [key, value] of Object.entries(attrs || {})) {
+      if (key === 'class') node.className = value;
+      else if (key === 'text') node.textContent = value;
+      else if (key === 'html') node.innerHTML = value;
+      else if (key.startsWith('on')) node.addEventListener(key.slice(2), value);
+      else if (value === true) node.setAttribute(key, '');
+      else if (value !== false && value != null) node.setAttribute(key, value);
+    }
+    for (const child of children || []) {
+      if (child) node.appendChild(typeof child === 'string' ? document.createTextNode(child) : child);
+    }
+    return node;
+  }
+
+  function field(labelText, control) {
+    return el('label', {}, [el('span', { text: labelText }), control]);
+  }
+
+  function numberInput(value, onChange, min) {
+    return el('input', {
+      type: 'number',
+      min: min == null ? 0 : min,
+      value: String(value),
+      oninput: (e) => onChange(Number(e.target.value)),
+    });
+  }
+
+  function textInput(value, onChange) {
+    return el('input', { type: 'text', value: value, oninput: (e) => onChange(e.target.value) });
+  }
+
+  function select(options, value, onChange, labelFor) {
+    const node = el('select', { onchange: (e) => onChange(e.target.value) },
+      options.map((opt) => el('option', { value: opt, text: labelFor ? labelFor(opt) : opt, selected: opt === value })));
+    node.value = value;
+    return node;
+  }
+
+  // --- screens -------------------------------------------------------------
+
+  function inventoryScreen() {
+    const inv = state.inventory;
+    const totalInputs = inv.console.localInputs + inv.stageBoxes.reduce((s, b) => s + b.inputs, 0);
+
+    const panel = el('section', { class: 'panel' }, [el('h2', { text: 'מלאי ציוד' })]);
+
+    panel.appendChild(el('h3', { text: 'מיקסר' }));
+    panel.appendChild(el('div', { class: 'row' }, [
+      field('דגם', select(['M32', 'X32'], inv.console.model, (v) => {
+        inv.console = Object.assign({}, M32, { model: v });
+        replan(); render();
+      })),
+      field('כניסות מקומיות', numberInput(inv.console.localInputs, (v) => {
+        inv.console.localInputs = v; replan(); render();
+      })),
+      field('יציאות מקומיות', numberInput(inv.console.localOutputs, (v) => {
+        inv.console.localOutputs = v; replan(); render();
+      })),
+    ]));
+
+    panel.appendChild(el('h3', { text: 'קופסאות במה' }));
+    if (inv.stageBoxes.length === 0) {
+      panel.appendChild(el('p', { class: 'empty', text: 'אין קופסאות במה — ייעשה שימוש בכניסות של המיקסר.' }));
+    }
+    inv.stageBoxes.forEach((box, i) => {
+      panel.appendChild(el('div', { class: 'row' }, [
+        field('שם', textInput(box.name, (v) => { box.name = v; replan(); render(); })),
+        field('כניסות', numberInput(box.inputs, (v) => { box.inputs = v; replan(); render(); })),
+        field('יציאות', numberInput(box.outputs, (v) => { box.outputs = v; replan(); render(); })),
+        field('AES50', select(['A', 'B'], box.aesPort, (v) => { box.aesPort = v; replan(); render(); })),
+        el('button', { class: 'ghost', text: 'הסר', onclick: () => {
+          inv.stageBoxes.splice(i, 1); replan(); render();
+        } }),
+      ]));
+    });
+    panel.appendChild(el('button', { class: 'ghost', text: '+ קופסת במה', onclick: () => {
+      inv.stageBoxes.push({ name: 'קופסת במה ' + (inv.stageBoxes.length + 1), inputs: 16, outputs: 8, aesPort: 'A', aesOffset: 0 });
+      replan(); render();
+    } }));
+
+    panel.appendChild(el('h3', { text: 'מולטיקורים' }));
+    if (inv.multicores.length === 0) {
+      panel.appendChild(el('p', { class: 'empty', text: 'אין מולטיקורים — לא תיווצר פריסת במה.' }));
+    }
+    inv.multicores.forEach((mc, i) => {
+      panel.appendChild(el('div', { class: 'row' }, [
+        field('שם', textInput(mc.name, (v) => { mc.name = v; replan(); render(); })),
+        field('כניסות', numberInput(mc.inputs, (v) => { mc.inputs = v; replan(); render(); })),
+        field('יציאות (מוניטורים)', numberInput(mc.outputs, (v) => { mc.outputs = v; replan(); render(); })),
+        el('button', { class: 'ghost', text: 'הסר', onclick: () => {
+          inv.multicores.splice(i, 1); replan(); render();
+        } }),
+      ]));
+    });
+    panel.appendChild(el('button', { class: 'ghost', text: '+ מולטי', onclick: () => {
+      inv.multicores.push({ name: 'מולטי ' + (inv.multicores.length + 1), inputs: 8, outputs: 4 });
+      replan(); render();
+    } }));
+
+    panel.appendChild(el('p', { class: 'hint', text:
+      'סה״כ ' + totalInputs + ' כניסות פיזיות · ' + inv.multicores.length + ' מולטיקורים. ' +
+      'שם המולטי קובע לאיזה אזור במה הוא ישויך — "מולטי תופים" ילך לתופים, כל עוד הקיבולת מספיקה.' }));
+
+    panel.appendChild(el('div', { class: 'actions' }, [
+      el('button', { class: 'primary', text: 'המשך לערוצים →', onclick: () => { state.step = 'channels'; render(); } }),
+    ]));
+
+    return panel;
+  }
+
+  function channelsScreen() {
+    const nodes = [];
+
+    const loadPanel = el('section', { class: 'panel' }, [
+      el('h2', { text: 'קלט ערוצים' }),
+      el('p', { class: 'hint', html:
+        '<strong>שלב חילוץ ה-AI לא רץ בדמו הזה.</strong> דף Artifact מפורסם חסום מקריאה לכל שרת חיצוני, ' +
+        'ולכן אי אפשר לשלוח מפרט למודל מכאן. שלוש הדרכים למטה מזינות את אותם הנתונים שהחילוץ היה מייצר.' }),
+      el('div', { class: 'actions' }, [
+        el('button', { class: 'primary', text: 'טען את המפרטים האמיתיים (מוזאיקה + מוסא ברלין)', onclick: loadRealRiders }),
+        el('button', { class: 'ghost', text: 'הוסף ערוץ ריק', onclick: addBlankChannel }),
+        state.requests.length ? el('button', { class: 'ghost', text: 'נקה הכל', onclick: clearAll }) : null,
+      ]),
+    ]);
+    nodes.push(loadPanel);
+
+    const pastePanel = el('section', { class: 'panel' }, [
+      el('h2', { text: 'הדבקת רשימה' }),
+      el('textarea', {
+        placeholder: 'ערוץ לכל שורה. אפשר גם:  שם | מיקרופון | אזור\n\nKick | Beta91 | drums\nSnare | SM57 | drums\nקלידים L | DI | front-left\nכינור | DI',
+        oninput: (e) => { state.pasteText = e.target.value; },
+      }),
+      el('p', { class: 'hint', html:
+        'זהו פרסר דטרמיניסטי פשוט — שורה לערוץ, ניחוש הכלי לפי מילות מפתח. ' +
+        '<strong>זה לא החילוץ של המוצר</strong>, שקורא PDF, צילומי מסך ופריסות במה מצוירות ביד ומסמן כל שדה שהוא ניחש.' }),
+      el('div', { class: 'actions' }, [
+        el('button', { class: 'ghost', text: 'הוסף מהטקסט', onclick: applyPaste }),
+      ]),
+    ]);
+    nodes.push(pastePanel);
+
+    if (state.requests.length > 0) {
+      const table = el('table', { class: 'patch' }, [
+        el('thead', {}, [el('tr', {}, [
+          el('th', { text: 'שם' }), el('th', { text: 'כלי' }), el('th', { text: 'מקור' }),
+          el('th', { text: 'מיק / DI' }), el('th', { text: '48V' }), el('th', { text: 'אזור' }),
+          el('th', { text: 'משותף' }), el('th', { text: 'להקה' }), el('th', { text: '' }),
+        ])]),
+      ]);
+      const tbody = el('tbody', {}, []);
+      state.requests.forEach((req, i) => {
+        tbody.appendChild(el('tr', {}, [
+          el('td', { class: 'name' }, [textInput(req.label, (v) => { req.label = v; replan(); })]),
+          el('td', {}, [select(INSTRUMENTS, req.instrument, (v) => { req.instrument = v; replan(); render(); })]),
+          el('td', {}, [select(['mic', 'di', 'wireless', 'line'], req.sourceType, (v) => { req.sourceType = v; replan(); })]),
+          el('td', { text: req.micModel || '—' }),
+          el('td', {}, [el('input', { type: 'checkbox', checked: !!req.phantom, onchange: (e) => { req.phantom = e.target.checked; replan(); } })]),
+          el('td', {}, [select(STAGE_ZONES, req.stageZone, (v) => { req.stageZone = v; replan(); render(); }, (z) => ZONE_LABELS[z])]),
+          el('td', {}, [el('input', { type: 'checkbox', checked: !!req.shareable, onchange: (e) => { req.shareable = e.target.checked; replan(); render(); } })]),
+          el('td', { text: req.bandId }),
+          el('td', {}, [el('button', { class: 'ghost tiny', text: '✕', onclick: () => {
+            state.requests.splice(i, 1); replan(); render();
+          } })]),
+        ]));
+      });
+      table.appendChild(tbody);
+
+      nodes.push(el('section', { class: 'panel' }, [
+        el('h2', {}, ['ערוצים מבוקשים ', el('span', { class: 'chip', text: String(state.requests.length) })]),
+        el('div', { class: 'table-scroll' }, [table]),
+        el('p', { class: 'hint', text: 'סמן "משותף" בסט התופים כדי לראות את המיזוג בין להקות — שני מפרטים שמבקשים אותו קיק יקבלו ערוץ אחד.' }),
+        el('div', { class: 'actions' }, [
+          el('button', { class: 'primary', text: 'תכנן Megapatch →', onclick: () => { replan(); state.step = 'patch'; render(); } }),
+        ]),
+      ]));
+    }
+
+    return nodes;
+  }
+
+  function patchScreen() {
+    const plan = state.plan;
+    if (!plan) {
+      return [el('section', { class: 'panel' }, [
+        el('p', { class: 'empty', text: 'עדיין אין ערוצים. חזור לשלב 2 וטען את המפרטים האמיתיים.' }),
+      ])];
+    }
+
+    const errors = plan.conflicts.filter((c) => c.severity === 'error');
+
+    const table = el('table', { class: 'patch' }, [
+      el('thead', {}, [el('tr', {}, [
+        el('th', { text: 'ערוץ' }), el('th', { text: 'שם' }), el('th', { text: 'פריסט' }),
+        el('th', { text: 'מיק / DI' }), el('th', { text: '48V' }),
+        el('th', { text: 'אזור' }), el('th', { text: 'מולטי' }), el('th', { text: 'קו' }),
+        el('th', { text: 'כניסה' }), el('th', { text: 'להקות' }), el('th', { text: 'סדר' }),
+      ])]),
+    ]);
+
+    const tbody = el('tbody', {}, []);
+    plan.channels.forEach((ch, i) => {
+      tbody.appendChild(el('tr', {}, [
+        el('td', { class: 'num', text: String(ch.channelNumber) }),
+        el('td', { class: 'name' }, [el('input', {
+          type: 'text', value: ch.name, maxlength: '12',
+          oninput: (e) => { ch.name = e.target.value; },
+        })]),
+        el('td', {}, [select(INSTRUMENTS, ch.presetId, (v) => { ch.presetId = v; render(); })]),
+        // The mic model already says how the source arrives ("DI", "Wireless
+        // RX"), so a separate source-type column costs width for no new
+        // information. It only appears when the rider named no model.
+        el('td', { text: ch.micModel || ch.sourceType.toUpperCase() }),
+        el('td', {}, [el('input', { type: 'checkbox', checked: !!ch.phantom, onchange: (e) => { ch.phantom = e.target.checked; } })]),
+        el('td', { text: ZONE_LABELS[ch.stageZone] }),
+        el('td', { text: ch.multicore ? ch.multicore.multicore : '—' }),
+        el('td', { class: 'num', text: ch.multicore ? String(ch.multicore.line) : '—' }),
+        el('td', { class: 'num', text: ch.input.device + ' ' + ch.input.connector }),
+        el('td', {}, [ch.bandIds.length > 1
+          ? el('span', { class: 'chip shared', text: 'משותף ×' + ch.bandIds.length })
+          : el('span', { class: 'chip', text: ch.bandIds[0] || '—' })]),
+        el('td', {}, [
+          el('button', { class: 'ghost tiny', text: '↑', onclick: () => moveChannel(i, -1) }),
+          el('button', { class: 'ghost tiny', text: '↓', onclick: () => moveChannel(i, 1) }),
+        ]),
+      ]));
+    });
+    table.appendChild(tbody);
+
+    const main = el('section', { class: 'panel' }, [
+      el('h2', {}, ['Megapatch']),
+      el('div', { class: 'stat' }, [
+        el('div', { html: '<b>' + plan.channels.length + '</b>ערוצים' }),
+        el('div', { html: '<b>' + plan.channels.filter((c) => c.bandIds.length > 1).length + '</b>משותפים' }),
+        el('div', { html: '<b>' + plan.multicoreLayout.length + '</b>מולטיקורים בשימוש' }),
+        el('div', { html: '<b>' + errors.length + '</b>קונפליקטים' }),
+      ]),
+      el('div', { class: 'table-scroll' }, [table]),
+      el('p', { class: 'hint', text: 'שינוי סדר מעדכן את מספרי הערוצים. כל שדה כאן ניתן לעריכה — המתכנן מייצר נקודת התחלה, לא גזר דין.' }),
+      el('div', { class: 'actions' }, [
+        el('button', { class: 'ghost', text: 'תכנן מחדש מהערוצים', onclick: () => { replan(); render(); } }),
+        el('button', { class: 'primary', text: 'המשך לייצוא →', onclick: () => { state.step = 'export'; render(); } }),
+      ]),
+    ]);
+
+    const conflictsPanel = el('section', { class: 'panel' }, [
+      el('h2', {}, ['קונפליקטים ', errors.length
+        ? el('span', { class: 'chip bad', text: errors.length + ' שגיאות' })
+        : el('span', { class: 'chip shared', text: 'נקי' })]),
+    ]);
+    if (plan.conflicts.length === 0) {
+      conflictsPanel.appendChild(el('p', { class: 'empty', text: 'התוכנית נכנסת במלאי הציוד.' }));
+    } else {
+      conflictsPanel.appendChild(el('ul', { class: 'notes' }, plan.conflicts.map((c) =>
+        el('li', { class: c.severity }, [
+          document.createTextNode(c.message),
+          c.suggestion ? el('span', { class: 'suggestion', text: c.suggestion }) : null,
+        ]))));
+    }
+
+    const layoutPanel = el('section', { class: 'panel' }, [el('h2', { text: 'פריסת במה' })]);
+    if (plan.multicoreLayout.length === 0) {
+      layoutPanel.appendChild(el('p', { class: 'empty', text: 'לא שויכו מולטיקורים.' }));
+    } else {
+      layoutPanel.appendChild(el('ul', { class: 'notes' }, plan.multicoreLayout.map((run) =>
+        el('li', {}, [
+          el('strong', { text: run.multicore }),
+          document.createTextNode(' ← ' + ZONE_LABELS[run.stageZone]),
+          el('span', { class: 'suggestion', text: run.lines.length + ' כניסות · ' + run.returnsUsed + ' מוניטורים' }),
+        ]))));
+    }
+
+    return [el('div', { class: 'grid-2' }, [main, el('div', {}, [conflictsPanel, layoutPanel])])];
+  }
+
+  function moveChannel(index, delta) {
+    const target = index + delta;
+    const channels = state.plan.channels;
+    if (target < 0 || target >= channels.length) return;
+    const [moved] = channels.splice(index, 1);
+    channels.splice(target, 0, moved);
+    // Channel numbers follow position, so renumber rather than leave them stale.
+    channels.forEach((c, i) => { c.channelNumber = i + 1; });
+    render();
+  }
+
+  function exportScreen() {
+    const plan = state.plan;
+    if (!plan) {
+      return [el('section', { class: 'panel' }, [el('p', { class: 'empty', text: 'אין תוכנית לייצא.' })])];
+    }
+
+    const scene = generateScene(plan);
+    const csv = toCsv(plan);
+    const errors = plan.conflicts.filter((c) => c.severity === 'error');
+
+    const panel = el('section', { class: 'panel' }, [el('h2', { text: 'ייצוא' })]);
+
+    if (errors.length > 0) {
+      panel.appendChild(el('div', { class: 'caution', text:
+        'יש ' + errors.length + ' קונפליקטים פתוחים. הייצוא יעבוד, אבל התוכנית לא נכנסת במלאי שהזנת.' }));
+    }
+
+    panel.appendChild(el('div', { class: 'stat' }, [
+      // trimEnd first: the file ends with a newline, which would otherwise
+      // count as an extra empty line.
+      el('div', { html: '<b>' + scene.trimEnd().split('\n').length + '</b>שורות ב-‎.scn' }),
+      el('div', { html: '<b>' + plan.channels.length + '</b>ערוצים מתוכנתים' }),
+      el('div', { html: '<b>' + (scene.match(/^\/headamp/gm) || []).length + '</b>פרי-אמפים' }),
+    ]));
+
+    panel.appendChild(el('div', { class: 'actions' }, [
+      el('button', { class: 'primary', text: 'הורד קובץ ‎.scn', onclick: () => save('stagepatch.scn', scene) }),
+      el('button', { class: 'ghost', text: 'הורד CSV', onclick: () => save('stagepatch-megapatch.csv', csv) }),
+    ]));
+
+    if (state.downloadNote) {
+      panel.appendChild(el('p', { class: 'hint', text: state.downloadNote }));
+    }
+
+    panel.appendChild(el('h3', { text: 'קובץ ה-Scene' }));
+    panel.appendChild(el('pre', { class: 'scene', text: scene.split('\n').slice(0, 40).join('\n') + '\n…' }));
+    panel.appendChild(el('p', { class: 'hint', text:
+      'העתק לדיסק-און-קי ← Setup → Scenes → Load במיקסר. כל הפייזרים נטענים סגורים (‎-oo‎) בכוונה, ' +
+      'וערוצים לא בשימוש נכתבים ריקים כדי שההופעה הקודמת לא תישאר עליהם.' }));
+
+    panel.appendChild(el('div', { class: 'caution', html:
+      '<strong>לפני שסומכים על זה בהופעה:</strong> טען את הקובץ ל-M32 או ל-M32-Edit במצב Offline ובדוק ' +
+      'שמות, צבעים, פאטצ׳ והגדרות. אף קובץ שנוצר כאן עדיין לא אומת מול חומרה.' }));
+
+    return [panel];
+  }
+
+  /**
+   * Hand a file to the viewer. The capability may be absent and the viewer may
+   * decline, so both cases are reported rather than failing silently.
+   */
+  async function save(filename, data) {
+    state.downloadNote = '';
+    try {
+      const downloads = await window.claude?.use?.('downloads');
+      if (!downloads) {
+        state.downloadNote = 'ההורדה לא זמינה בתצוגה הזו. תוכן קובץ ה-Scene מוצג במלואו למטה להעתקה.';
+        render();
+        return;
+      }
+      await downloads.save({ filename, data });
+    } catch (error) {
+      state.downloadNote = 'ההורדה לא הושלמה: ' + (error && error.message ? error.message : String(error));
+      render();
+    }
+  }
+
+  // --- shell ---------------------------------------------------------------
+
+  const STEPS = [
+    ['inventory', '1 · מלאי ציוד'],
+    ['channels', '2 · ערוצים'],
+    ['patch', '3 · Megapatch'],
+    ['export', '4 · ייצוא'],
+  ];
+
+  function render() {
+    const app = document.getElementById('app');
+    app.textContent = '';
+
+    app.appendChild(el('header', { class: 'top' }, [
+      el('h1', { text: 'StagePatch' }),
+      el('span', { class: 'sub', text:
+        state.inventory.console.model + ' · ' + state.requests.length + ' ערוצים מבוקשים · ' +
+        state.bands.length + ' להקות' }),
+    ]));
+
+    app.appendChild(el('div', { class: 'banner', html:
+      'מפרט טכני ← Megapatch ← קובץ Scene ל-MIDAS M32. ' +
+      '<strong>זהו דמו של המנוע:</strong> התכנון, זיהוי הקונפליקטים וייצור קובץ ה-‎.scn‎ הם הקוד האמיתי. ' +
+      'שלב חילוץ ה-AI מהמפרטים לא רץ כאן — דף מפורסם חסום מקריאה לשרת חיצוני.' }));
+
+    app.appendChild(el('nav', { class: 'steps' }, STEPS.map(([id, label]) =>
+      el('button', {
+        'aria-current': state.step === id ? 'true' : 'false',
+        text: label,
+        onclick: () => { state.step = id; render(); },
+      }))));
+
+    let content;
+    if (state.step === 'inventory') content = [inventoryScreen()];
+    else if (state.step === 'channels') content = channelsScreen();
+    else if (state.step === 'patch') content = patchScreen();
+    else content = exportScreen();
+
+    for (const node of content) app.appendChild(node);
+  }
+
+  render();
+})();
+</script>
+<!-- Deployment trigger -->
