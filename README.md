@@ -129,6 +129,24 @@ the full parameter set the console expects.
 > generated scene has been loaded into an M32 yet. Do that — on the console or
 > in M32-Edit's offline mode — before trusting one at a show.
 
+## Live demo
+
+`packages/demo` bundles the engine into a single self-contained HTML page — no
+server, no API key. It loads the two real riders this project is tested against,
+plans them, and generates a downloadable `.scn`.
+
+```sh
+node packages/demo/build.mjs      # -> packages/demo/dist/index.html
+```
+
+The seed data is imported from `packages/core/test/fixture.ts` rather than
+copied, so the demo cannot drift from what the planner tests assert.
+
+**Rider extraction does not run in the demo.** A published page is blocked from
+reaching any external host, so there is no way to call a model from it. The
+demo's paste box is a keyword parser standing in for that step, and says so on
+the page.
+
 ## Tests
 
 ```sh
