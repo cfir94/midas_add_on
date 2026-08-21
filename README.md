@@ -30,11 +30,59 @@ packages/core/          Pure logic. No network, no UI, no API keys.
   planner/plan.ts       Building the plan and reporting every conflict
   export/megapatch.ts   The patch sheet as CSV / Markdown
   scn/generate.ts       The scene file
+packages/ingest/        Riders (PDF / image / text) -> ChannelRequest[], via Claude
+packages/server/        Fastify API over the above
+packages/web/           React UI: inventory, upload, patch grid, export
 fixtures/               Real megapatches, used to measure the ingest stage
 ```
 
 `packages/core` has no external dependencies, so the whole planner and scene
 generator can be tested without a console and without an API key.
+
+## Using it
+
+```sh
+npm install
+export ANTHROPIC_API_KEY=...        # only the ingest stage needs this
+
+npm run dev --workspace @stagepatch/server   # API on :3001
+npm run dev --workspace @stagepatch/web      # UI on :5173, proxies /api
+```
+
+The UI walks four steps: **gear → riders → megapatch → export**. Step 3 is the
+one that matters — every field in the patch grid is editable, because the
+planner produces a starting point and a technician overriding it is the
+expected workflow.
+
+### API
+
+| | |
+|---|---|
+| `POST /api/events` | Create an event with an inventory |
+| `PUT /api/events/:id/inventory` | Update gear; re-plans |
+| `POST /api/events/:id/riders` | Upload one band's rider files; extracts, merges, re-plans |
+| `POST /api/events/:id/plan` | Re-plan from the riders, discarding manual edits |
+| `PUT /api/events/:id/plan` | Store the technician's edited plan as given |
+| `GET /api/events/:id/export/scene` | The `.scn` file |
+| `GET /api/events/:id/export/{csv,markdown}` | The patch sheet |
+
+Storage is in-memory behind an `EventStore` interface, so swapping in a database
+touches `packages/server/src/store.ts` only.
+
+### Rider extraction
+
+`packages/ingest` sends the rider to Claude with a structured output schema and
+gets back a channel list. Two things it is built to do:
+
+- **Flag its guesses.** Any field the rider did not state arrives in that
+  request's `confidence` map, and document-level problems ("rider offers violin
+  *or* accordion") in `warnings`. Neither is dropped.
+- **Not tidy up.** If a rider lists 14 inputs it returns 14, not a rounded 16.
+
+**Zod v4 is required.** The SDK's `betaZodOutputFormat` resolves `zod` from the
+package root and calls `z.toJSONSchema`, which does not exist on v3 — on v3
+every extraction fails at request time while every parse-only test still
+passes. There is a test guarding this.
 
 ## Design commitments
 
@@ -81,17 +129,19 @@ the full parameter set the console expects.
 > generated scene has been loaded into an M32 yet. Do that — on the console or
 > in M32-Edit's offline mode — before trusting one at a show.
 
-## Running it
+## Tests
 
 ```sh
-npm install
-npm test          # 43 tests, no console or API key needed
+npm test          # 72 tests: 43 core, 13 ingest, 16 server
 npm run typecheck
 ```
 
+None of them need a console or an API key — rider extraction is injectable, so
+the API is tested end to end against a stub.
+
 ## Not built yet
 
-- Ingest: riders (PDF / image / spreadsheet, Hebrew and English) → `ChannelRequest[]`
-- Web UI: inventory, upload, the editable megapatch grid, export
-- Live OSC push
-- Other consoles — the plan model is already console-agnostic
+- Live OSC push — programming the console over the network instead of via a file
+- Other consoles: Yamaha CL/QL, Allen & Heath dLive. The plan model is already
+  console-agnostic; only the output generator changes
+- Event templates — reusing a working event as the starting point for the next

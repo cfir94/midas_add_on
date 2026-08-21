@@ -1,0 +1,162 @@
+/*
+ * Dark by default: this is read on a console at a dimly lit FOH position, and a
+ * white screen there costs the operator their night vision.
+ */
+:root {
+  --bg: #14161a;
+  --surface: #1c1f25;
+  --surface-raised: #23272f;
+  --border: #313640;
+  --text: #e8eaed;
+  --text-dim: #9aa2ae;
+  --accent: #4a9eff;
+  --error: #ff6b6b;
+  --warning: #ffb454;
+  --ok: #4ade80;
+
+  color-scheme: dark;
+  font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  font-size: 15px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.app { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
+
+header.top {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+header.top h1 { margin: 0; font-size: 1.4rem; }
+header.top .sub { color: var(--text-dim); font-size: 0.9rem; }
+
+nav.steps { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+nav.steps button {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+nav.steps button[aria-current="true"] {
+  background: var(--surface-raised);
+  border-color: var(--accent);
+  color: var(--text);
+}
+nav.steps button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+section.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+section.panel h2 { margin: 0 0 1rem; font-size: 1.1rem; }
+section.panel h3 { margin: 1.25rem 0 0.5rem; font-size: 0.95rem; color: var(--text-dim); }
+
+label { display: block; margin-bottom: 0.75rem; font-size: 0.9rem; }
+label > span { display: block; margin-bottom: 0.25rem; color: var(--text-dim); }
+
+input, select, textarea {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.45rem 0.6rem;
+  border-radius: 5px;
+  font: inherit;
+}
+input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+
+button.primary {
+  background: var(--accent);
+  border: none;
+  color: #08111d;
+  font-weight: 600;
+  padding: 0.55rem 1.1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+button.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+button.ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.45rem 0.9rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.row { display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap; }
+.row > * { flex: 1 1 140px; }
+.row > button { flex: 0 0 auto; }
+
+.grid-2 { display: grid; grid-template-columns: 1fr 320px; gap: 1rem; align-items: start; }
+@media (max-width: 1000px) { .grid-2 { grid-template-columns: 1fr; } }
+
+/* The patch table is the screen that matters; it scrolls on its own so the
+   page never scrolls sideways. */
+.table-scroll { overflow-x: auto; }
+table.patch { width: 100%; border-collapse: collapse; font-size: 0.88rem; white-space: nowrap; }
+table.patch th, table.patch td {
+  border-bottom: 1px solid var(--border);
+  padding: 0.35rem 0.5rem;
+  text-align: start;
+}
+table.patch th { color: var(--text-dim); font-weight: 600; font-size: 0.8rem; }
+table.patch tbody tr:hover { background: var(--surface-raised); }
+table.patch td.num { font-variant-numeric: tabular-nums; color: var(--text-dim); }
+table.patch input, table.patch select { padding: 0.2rem 0.35rem; font-size: 0.85rem; }
+table.patch td.name input { min-width: 130px; }
+
+.chip {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+.chip.shared { border-color: var(--ok); color: var(--ok); }
+.chip.guess { border-color: var(--warning); color: var(--warning); }
+
+ul.conflicts { list-style: none; margin: 0; padding: 0; }
+ul.conflicts li {
+  border-inline-start: 3px solid var(--border);
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+  background: var(--bg);
+  border-radius: 0 5px 5px 0;
+  font-size: 0.85rem;
+}
+ul.conflicts li.error { border-inline-start-color: var(--error); }
+ul.conflicts li.warning { border-inline-start-color: var(--warning); }
+ul.conflicts li .suggestion { display: block; margin-top: 0.25rem; color: var(--text-dim); }
+
+.empty { color: var(--text-dim); font-size: 0.9rem; }
+.error-banner {
+  background: #3a1d1d;
+  border: 1px solid var(--error);
+  color: #ffd5d5;
+  padding: 0.7rem 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+.hint { color: var(--text-dim); font-size: 0.85rem; margin: 0.5rem 0 0; line-height: 1.5; }
+.actions { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 1rem; }
