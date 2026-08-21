@@ -135,6 +135,10 @@ the full parameter set the console expects.
 server, no API key. It loads the two real riders this project is tested against,
 plans them, and generates a downloadable `.scn`.
 
+**Try it now:** https://cfir94.github.io/midas_add_on/
+
+The demo is deployed automatically via GitHub Pages. To build locally:
+
 ```sh
 node packages/demo/build.mjs      # -> packages/demo/dist/index.html
 ```
